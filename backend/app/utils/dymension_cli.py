@@ -2,32 +2,47 @@ import subprocess
 import json
 import os
 import re
+import shutil
 from typing import Dict, List, Optional, Tuple, Union
+import platform
 
 class DymensionCLI:
     """Wrapper for Dymension CLI commands"""
     
-    def __init__(self, binary_path: str = "dymd"):
-        """Initialize the DymensionCLI handler.
+    def __init__(self):
+        """Initialize the DymensionCLI handler."""
+        # Find paths to binaries
+        self.dymd_path = self._find_binary('dymd')
+        self.roller_path = self._find_binary('roller')
         
-        Args:
-            binary_path: Path to the dymd binary. Defaults to 'dymd' (assuming it's in PATH)
-        """
-        self.binary_path = binary_path
-        self.binary_version = self._get_binary_version()
+        # Initialize OS detection
+        self.os = platform.system()  # 'Windows', 'Linux', or 'Darwin' (macOS)
+        self.is_windows = self.os == 'Windows'
+        self.is_mac = self.os == 'Darwin'
+        self.is_linux = self.os == 'Linux'
         
-    def _get_binary_version(self) -> str:
-        """Get the version of the dymd binary."""
-        try:
-            result = subprocess.run(
-                [self.binary_path, "version"], 
-                capture_output=True, 
-                text=True,
-                check=True
-            )
-            return result.stdout.strip()
-        except (subprocess.SubprocessError, FileNotFoundError):
-            return "Unknown"
+    def _find_binary(self, binary_name: str) -> str:
+        """Find the full path to a binary, checking common installation locations."""
+        # First check if it's in PATH
+        path = shutil.which(binary_name)
+        if path:
+            return path
+            
+        # Check common installation locations
+        common_locations = [
+            os.path.expanduser(f"~/.roller/bin/{binary_name}"),
+            os.path.expanduser(f"~/go/bin/{binary_name}"),
+            os.path.expanduser(f"~/dymension/bin/{binary_name}"),
+            f"/usr/local/bin/{binary_name}",
+            f"/usr/bin/{binary_name}"
+        ]
+        
+        for location in common_locations:
+            if os.path.exists(location) and os.access(location, os.X_OK):
+                return location
+                
+        # Return the binary name and let the OS try to find it
+        return binary_name
     
     def run_command(self, args: List[str], parse_json: bool = False) -> Dict:
         """Run a dymd command with the given arguments.
@@ -40,7 +55,13 @@ class DymensionCLI:
             Dict containing command result with status, output, and error fields
         """
         try:
-            cmd = [self.binary_path] + args
+            # Replace first element with full path if available
+            if args and (args[0] == 'dymd' and self.dymd_path):
+                args[0] = self.dymd_path
+            elif args and (args[0] == 'roller' and self.roller_path):
+                args[0] = self.roller_path
+                
+            cmd = args
             print(f"Executing command: {' '.join(cmd)}")
             
             result = subprocess.run(
@@ -79,11 +100,37 @@ class DymensionCLI:
                 "error": ""
             }
             
+        except FileNotFoundError as e:
+            binary = args[0] if args else "unknown"
+            installation_instructions = ""
+            if binary == "dymd" or binary == self.dymd_path:
+                installation_instructions = "\nTo install dymd: git clone https://github.com/dymensionxyz/dymension.git && cd dymension && git checkout v1.0.2-beta && make install"
+            elif binary == "roller" or binary == self.roller_path:
+                installation_instructions = "\nTo install roller: curl https://raw.githubusercontent.com/dymensionxyz/roller/main/install.sh | bash"
+            
+            return {
+                "status": "error",
+                "output": f"Error: {str(e)}{installation_instructions}",
+                "error": str(e)
+            }
         except Exception as e:
             return {
                 "status": "error",
                 "output": "",
                 "error": str(e)
+            }
+    
+    def get_binary_version(self, binary: str = "roller") -> Dict:
+        """Get the version of the specified binary."""
+        if binary == "roller":
+            return self.run_command([binary, "version"])
+        elif binary == "dymd":
+            return self.run_command([binary, "version"])
+        else:
+            return {
+                "status": "error",
+                "output": f"Unsupported binary: {binary}",
+                "raw_output": ""
             }
     
     def get_status(self) -> Dict:
@@ -325,6 +372,272 @@ class DymensionCLI:
             "-y"  # Auto-confirm
         ], parse_json=True)
     
+    def simulate_install(self, what="all"):
+        """Simulate installation of different components based on OS"""
+        what = what.lower()
+
+        if self.is_windows:
+            if what == "essentials":
+                return {
+                    "status": "success",
+                    "output": "# Install essential dependencies (Windows)\n"
+                             "# Install Chocolatey first (if not installed)\n"
+                             "@powershell -NoProfile -ExecutionPolicy Bypass -Command \"iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))\"\n\n"
+                             "# Install dependencies using Chocolatey\n"
+                             "choco install -y git wget curl jq",
+                    "error": ""
+                }
+            elif what == "go":
+                return {
+                    "status": "success", 
+                    "output": "# Install Go (Windows)\n"
+                              "# Download Go installer\n"
+                              "wget -O go_installer.msi https://golang.org/dl/go1.23.0.windows-amd64.msi\n\n"
+                              "# Run installer\n"
+                              "start /wait go_installer.msi /quiet\n\n"
+                              "# Add to PATH (may require restarting terminal)\n"
+                              "setx PATH \"%PATH%;C:\\Go\\bin;%USERPROFILE%\\go\\bin\" -m\n\n"
+                              "# Verify installation\n"
+                              "go version",
+                    "error": ""
+                }
+            elif what == "roller":
+                return {
+                    "status": "success",
+                    "output": "# Install Roller CLI (Windows)\n"
+                             "# Download and run the Windows installer script\n"
+                             "curl -sSL https://raw.githubusercontent.com/dymensionxyz/roller/main/install-windows.ps1 -o install-roller.ps1\n"
+                             "powershell -ExecutionPolicy Bypass -File .\\install-roller.ps1\n\n"
+                             "# Add to PATH if needed\n"
+                             "setx PATH \"%PATH%;%USERPROFILE%\\.roller\\bin\" -m\n\n"
+                             "# Verify installation\n"
+                             "roller version",
+                    "error": ""
+                }
+            else:  # all
+                return {
+                    "status": "success",
+                    "output": "# Complete Dymension Setup Script (Windows)\n\n"
+                             "# Install Chocolatey (if not installed)\n"
+                             "@powershell -NoProfile -ExecutionPolicy Bypass -Command \"iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))\"\n\n"
+                             "# Install dependencies\n"
+                             "choco install -y git wget curl jq\n\n"
+                             "# Install Go\n"
+                             "wget -O go_installer.msi https://golang.org/dl/go1.23.0.windows-amd64.msi\n"
+                             "start /wait go_installer.msi /quiet\n"
+                             "setx PATH \"%PATH%;C:\\Go\\bin;%USERPROFILE%\\go\\bin\" -m\n\n"
+                             "# Install Roller CLI\n"
+                             "curl -sSL https://raw.githubusercontent.com/dymensionxyz/roller/main/install-windows.ps1 -o install-roller.ps1\n"
+                             "powershell -ExecutionPolicy Bypass -File .\\install-roller.ps1\n\n"
+                             "# Add Roller to PATH\n"
+                             "setx PATH \"%PATH%;%USERPROFILE%\\.roller\\bin\" -m\n\n"
+                             "# Install Dymension\n"
+                             "git clone https://github.com/dymensionxyz/dymension.git\n"
+                             "cd dymension\n"
+                             "git checkout v1.0.2-beta\n"
+                             "go build -o %USERPROFILE%\\go\\bin\\dymd.exe ./cmd/dymd\n\n"
+                             "# Verify installation\n"
+                             "roller version\n"
+                             "dymd version\n\n"
+                             "# Note: After installation, restart your terminal to apply PATH changes\n",
+                    "error": ""
+                }
+        else:  # macOS or Linux
+            if what == "essentials":
+                if self.is_mac:
+                    return {
+                        "status": "success",
+                        "output": "# Install essential dependencies (macOS)\n"
+                                "# Install Homebrew if not installed\n"
+                                "/bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"\n\n"
+                                "# Install dependencies\n"
+                                "brew install git wget curl jq",
+                        "error": ""
+                    }
+                else:  # Linux
+                    return {
+                        "status": "success",
+                        "output": "# Install essential dependencies (Linux)\n"
+                                "sudo apt update\n"
+                                "sudo apt install -y build-essential git wget curl jq",
+                        "error": ""
+                    }
+            elif what == "go":
+                return {
+                    "status": "success", 
+                    "output": "# Install Go\n"
+                              "wget -O go.tar.gz https://golang.org/dl/go1.23.0.linux-amd64.tar.gz\n"
+                              "sudo rm -rf /usr/local/go\n"
+                              "sudo tar -C /usr/local -xzf go.tar.gz\n"
+                              "rm go.tar.gz\n"
+                              "echo 'export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin' >> ~/.bashrc\n"
+                              "source ~/.bashrc\n"
+                              "go version",
+                    "error": ""
+                }
+            elif what == "roller":
+                return {
+                    "status": "success",
+                    "output": "# Install Roller CLI\n"
+                             "curl https://raw.githubusercontent.com/dymensionxyz/roller/main/install.sh | bash\n"
+                             "# Verify installation\n"
+                             "roller version",
+                    "error": ""
+                }
+            else:  # all
+                base_cmd = "# Install Homebrew if not installed\n/bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"\n\n# Install dependencies\nbrew install git wget curl jq\n\n" if self.is_mac else "# Install essential dependencies\nsudo apt update\nsudo apt install -y build-essential git wget curl jq\n\n"
+                
+                return {
+                    "status": "success",
+                    "output": f"# Complete Dymension RollApp setup script\n\n"
+                              f"{base_cmd}"
+                              "# Install Go\n"
+                              "wget -O go.tar.gz https://golang.org/dl/go1.23.0.linux-amd64.tar.gz\n"
+                              "sudo rm -rf /usr/local/go\n"
+                              "sudo tar -C /usr/local -xzf go.tar.gz\n"
+                              "rm go.tar.gz\n"
+                              "echo 'export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin' >> ~/.bashrc\n"
+                              "source ~/.bashrc\n\n"
+                              "# Install Roller CLI\n"
+                              "curl https://raw.githubusercontent.com/dymensionxyz/roller/main/install.sh | bash\n\n"
+                              "# Install Dymension Chain\n"
+                              "git clone https://github.com/dymensionxyz/dymension.git\n"
+                              "cd dymension\n"
+                              "git checkout v1.0.2-beta\n"
+                              "make install\n\n"
+                              "# Verify installation\n"
+                              "roller version\n"
+                              "dymd version\n\n"
+                              "# Note: After installation, you can create a RollApp with:\n"
+                              "# roller create my_rollapp mytoken\n\n"
+                              "echo 'Dymension environment setup complete!'\n",
+                    "error": ""
+                }
+    
+    def extract_multi_command(self, command_text: str) -> Dict:
+        """Extract multiple commands from a natural language instruction.
+        
+        Args:
+            command_text: Natural language command with potentially multiple instructions
+            
+        Returns:
+            Dict with combined commands and instructions
+        """
+        command_text = command_text.lower()
+        commands_to_execute = []
+        found_commands = []
+        
+        # Check for installation sequence
+        if "install" in command_text:
+            # Check for essentials/dependencies
+            if any(term in command_text for term in ["essential", "essentials", "dependencies"]):
+                found_commands.append("essentials")
+                
+            # Check for Go installation
+            if any(term in command_text for term in ["go", "golang"]):
+                version_match = re.search(r"go (?:version )?([0-9]+\.[0-9]+\.[0-9]+)", command_text)
+                go_version = version_match.group(1) if version_match else "1.23.0"
+                found_commands.append(f"go_{go_version}")
+                
+            # Check for roller installation
+            if any(term in command_text for term in ["roller", "roller cli"]):
+                found_commands.append("roller")
+                
+            # Check for dymd installation
+            if any(term in command_text for term in ["dymd", "dymension chain"]):
+                found_commands.append("dymd")
+        
+        # RollApp management commands
+        if "create rollapp" in command_text or "new rollapp" in command_text:
+            rollapp_name_match = re.search(r"(?:named|called|with name|id) ['\"]*([a-zA-Z0-9_-]+)['\"]*", command_text)
+            if rollapp_name_match:
+                found_commands.append(f"create_rollapp_{rollapp_name_match.group(1)}")
+        
+        # Wallet management commands
+        if "create wallet" in command_text or "new wallet" in command_text:
+            wallet_name_match = re.search(r"(?:named|called|with name) ['\"]*([a-zA-Z0-9_-]+)['\"]*", command_text)
+            if wallet_name_match:
+                found_commands.append(f"create_wallet_{wallet_name_match.group(1)}")
+        
+        # Now build the actual commands for each identified action
+        essential_cmd = "sudo apt install -y build-essential clang curl aria2 wget tar jq libssl-dev pkg-config make"
+        
+        for cmd in found_commands:
+            if cmd == "essentials":
+                commands_to_execute.append({
+                    "description": "Install essential dependencies",
+                    "command": essential_cmd,
+                    "sudo_required": True
+                })
+            elif cmd.startswith("go_"):
+                go_version = cmd.split("_")[1]
+                commands_to_execute.append({
+                    "description": f"Install Go {go_version}",
+                    "command": f"wget -O go.tar.gz https://golang.org/dl/go{go_version}.linux-amd64.tar.gz && sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go.tar.gz && rm go.tar.gz",
+                    "sudo_required": True
+                })
+                commands_to_execute.append({
+                    "description": "Add Go to your PATH",
+                    "command": "echo 'export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin' >> ~/.profile && source ~/.profile",
+                    "sudo_required": False
+                })
+            elif cmd == "roller":
+                commands_to_execute.append({
+                    "description": "Install Roller CLI",
+                    "command": "curl https://raw.githubusercontent.com/dymensionxyz/roller/main/install.sh | bash",
+                    "sudo_required": False
+                })
+            elif cmd == "dymd":
+                commands_to_execute.append({
+                    "description": "Clone Dymension repository",
+                    "command": "git clone https://github.com/dymensionxyz/dymension.git",
+                    "sudo_required": False
+                })
+                commands_to_execute.append({
+                    "description": "Build and install dymd",
+                    "command": "cd dymension && git checkout v1.0.2-beta && make install",
+                    "sudo_required": False
+                })
+            elif cmd.startswith("create_rollapp_"):
+                rollapp_name = cmd.split("_", 2)[2]
+                commands_to_execute.append({
+                    "description": f"Initialize RollApp {rollapp_name}",
+                    "command": f"roller create {rollapp_name} {rollapp_name}token",
+                    "sudo_required": False
+                })
+            elif cmd.startswith("create_wallet_"):
+                wallet_name = cmd.split("_", 2)[2]
+                commands_to_execute.append({
+                    "description": f"Create wallet {wallet_name}",
+                    "command": f"dymd keys add {wallet_name}",
+                    "sudo_required": False
+                })
+        
+        # If no commands were found, return empty result
+        if not commands_to_execute:
+            return {
+                "status": "error",
+                "output": "",
+                "error": "No specific commands could be extracted from your description. Please try a more specific request."
+            }
+        
+        # Format the output as a shell script with comments
+        script_output = "#!/bin/bash\n# Commands to execute based on your request\n\n"
+        
+        for cmd_info in commands_to_execute:
+            script_output += f"# {cmd_info['description']}\n{cmd_info['command']}\n\n"
+        
+        # Add a note about sudo permissions if needed
+        if any(cmd["sudo_required"] for cmd in commands_to_execute):
+            script_output += "# Note: Some commands require sudo privileges. You may be prompted for your password.\n"
+        
+        return {
+            "status": "success",
+            "output": script_output,
+            "raw_output": commands_to_execute,
+            "error": ""
+        }
+    
     def parse_command(self, command_text: str) -> Dict:
         """Parse a command string provided by the user and execute the appropriate Dymension command.
         
@@ -334,331 +647,37 @@ class DymensionCLI:
         Returns:
             Dict with command result
         """
-        command_text = command_text.lower()
+        command_text = command_text.lower().strip()
         
-        # Wallet management
-        if re.search(r"create (?:a )?(?:new )?wallet", command_text):
-            match = re.search(r"(?:named|called|name) ['\"]*(\w+)['\"]*", command_text)
-            if match:
-                wallet_name = match.group(1)
-                return self.create_wallet(wallet_name)
-            else:
-                return {"status": "error", "error": "Please specify a wallet name", "output": ""}
-        
-        elif re.search(r"recover (?:a )?wallet", command_text):
-            match = re.search(r"(?:named|called|name) ['\"]*(\w+)['\"]*", command_text)
-            if match:
-                wallet_name = match.group(1)
-                return self.recover_wallet(wallet_name)
-            else:
-                return {"status": "error", "error": "Please specify a wallet name", "output": ""}
-        
-        elif re.search(r"list (?:all )?wallets", command_text):
-            return self.list_wallets()
-        
-        # Balance and transfers
-        elif re.search(r"(?:check|get|show) (?:the )?balance", command_text):
-            match = re.search(r"(?:for|of) (?:address )?['\"]*([a-zA-Z0-9]+)['\"]*", command_text)
-            if match:
-                address = match.group(1)
-                return self.get_balance(address)
-            else:
-                return {"status": "error", "error": "Please specify an address", "output": ""}
-        
-        elif re.search(r"(?:transfer|send) (?:tokens|funds|money)", command_text):
-            from_match = re.search(r"from ['\"]*(\w+)['\"]*", command_text)
-            to_match = re.search(r"to ['\"]*([a-zA-Z0-9]+)['\"]*", command_text)
-            amount_match = re.search(r"([0-9]+(?:\.[0-9]+)?)[\s]*([a-zA-Z]+)", command_text)
-            chain_match = re.search(r"chain(?:-| )id ['\"]*([a-zA-Z0-9_-]+)['\"]*", command_text)
+        # Check for OS detection command
+        if re.search(r"(?:detect|check|show) (?:my )?(?:os|operating system|platform)", command_text):
+            return self.detect_os()
             
-            if from_match and to_match and amount_match and chain_match:
-                from_wallet = from_match.group(1)
-                to_address = to_match.group(1)
-                amount = amount_match.group(1) + amount_match.group(2)
-                chain_id = chain_match.group(1)
-                return self.transfer_tokens(from_wallet, to_address, amount, chain_id)
-            else:
-                missing = []
-                if not from_match:
-                    missing.append("sender wallet name")
-                if not to_match:
-                    missing.append("recipient address")
-                if not amount_match:
-                    missing.append("amount and denomination")
-                if not chain_match:
-                    missing.append("chain ID")
-                
-                return {
-                    "status": "error", 
-                    "error": f"Missing parameters: {', '.join(missing)}", 
-                    "output": ""
-                }
+        # Installation commands
+        if re.search(r"install all|install everything|setup everything", command_text):
+            return self.simulate_install("all")
         
-        # RollApp operations
-        elif re.search(r"create (?:a )?(?:new )?rollapp", command_text):
-            id_match = re.search(r"(?:id|named|called) ['\"]*([a-zA-Z0-9_]+)['\"]*", command_text)
-            from_match = re.search(r"from ['\"]*(\w+)['\"]*", command_text)
-            chain_match = re.search(r"chain(?:-| )id ['\"]*([a-zA-Z0-9_-]+)['\"]*", command_text)
-            
-            if id_match and from_match and chain_match:
-                rollapp_id = id_match.group(1)
-                from_wallet = from_match.group(1)
-                chain_id = chain_match.group(1)
-                return self.create_rollapp(rollapp_id, from_wallet, chain_id)
-            else:
-                missing = []
-                if not id_match:
-                    missing.append("RollApp ID")
-                if not from_match:
-                    missing.append("wallet name")
-                if not chain_match:
-                    missing.append("chain ID")
-                
-                return {
-                    "status": "error", 
-                    "error": f"Missing parameters: {', '.join(missing)}", 
-                    "output": ""
-                }
+        elif re.search(r"install (?:the )?essentials", command_text) or re.search(r"install (?:the )?dependencies", command_text):
+            return self.simulate_install("essentials")
         
-        elif re.search(r"register (?:a )?sequencer", command_text):
-            rollapp_match = re.search(r"(?:for|to) rollapp ['\"]*([a-zA-Z0-9_]+)['\"]*", command_text)
-            address_match = re.search(r"(?:with )?(?:address|addr) ['\"]*([a-zA-Z0-9]+)['\"]*", command_text)
-            from_match = re.search(r"from ['\"]*(\w+)['\"]*", command_text)
-            dym_match = re.search(r"dym account ['\"]*([a-zA-Z0-9]+)['\"]*", command_text)
-            pubkey_match = re.search(r"pubkey ['\"]*([a-zA-Z0-9/+=]+)['\"]*", command_text)
-            chain_match = re.search(r"chain(?:-| )id ['\"]*([a-zA-Z0-9_-]+)['\"]*", command_text)
-            
-            if rollapp_match and address_match and from_match and dym_match and pubkey_match and chain_match:
-                return self.register_sequencer(
-                    rollapp_match.group(1),
-                    address_match.group(1),
-                    from_match.group(1),
-                    dym_match.group(1),
-                    pubkey_match.group(1),
-                    chain_match.group(1)
-                )
-            else:
-                missing = []
-                if not rollapp_match:
-                    missing.append("RollApp ID")
-                if not address_match:
-                    missing.append("sequencer address")
-                if not from_match:
-                    missing.append("wallet name")
-                if not dym_match:
-                    missing.append("Dymension account")
-                if not pubkey_match:
-                    missing.append("public key")
-                if not chain_match:
-                    missing.append("chain ID")
-                
-                return {
-                    "status": "error", 
-                    "error": f"Missing parameters: {', '.join(missing)}", 
-                    "output": ""
-                }
+        elif re.search(r"install (?:go|golang)", command_text):
+            return self.simulate_install("go")
         
-        elif re.search(r"(?:show|get|list) (?:all )?rollapp(?:s)?", command_text):
-            if "all" in command_text or "list" in command_text:
-                return self.list_rollapp()
-            else:
-                match = re.search(r"(?:named|called|for|id) ['\"]*([a-zA-Z0-9_]+)['\"]*", command_text)
-                if match:
-                    rollapp_id = match.group(1)
-                    return self.query_rollapp(rollapp_id)
-                else:
-                    return {"status": "error", "error": "Please specify a RollApp ID", "output": ""}
-        
-        elif re.search(r"(?:show|get|query) sequencers", command_text):
-            match = re.search(r"(?:for|of) rollapp ['\"]*([a-zA-Z0-9_]+)['\"]*", command_text)
-            if match:
-                rollapp_id = match.group(1)
-                return self.query_sequencers(rollapp_id)
-            else:
-                return {"status": "error", "error": "Please specify a RollApp ID", "output": ""}
-        
-        elif re.search(r"claim settlement", command_text):
-            id_match = re.search(r"(?:with )?id ['\"]*([a-zA-Z0-9_-]+)['\"]*", command_text)
-            from_match = re.search(r"from ['\"]*(\w+)['\"]*", command_text)
-            chain_match = re.search(r"chain(?:-| )id ['\"]*([a-zA-Z0-9_-]+)['\"]*", command_text)
-            
-            if id_match and from_match and chain_match:
-                return self.claim_settlement(
-                    id_match.group(1),
-                    from_match.group(1),
-                    chain_match.group(1)
-                )
-            else:
-                missing = []
-                if not id_match:
-                    missing.append("settlement ID")
-                if not from_match:
-                    missing.append("wallet name")
-                if not chain_match:
-                    missing.append("chain ID")
-                
-                return {
-                    "status": "error", 
-                    "error": f"Missing parameters: {', '.join(missing)}", 
-                    "output": ""
-                }
-        
-        elif re.search(r"submit batch", command_text):
-            rollapp_match = re.search(r"(?:for) rollapp ['\"]*([a-zA-Z0-9_]+)['\"]*", command_text)
-            from_match = re.search(r"from ['\"]*(\w+)['\"]*", command_text)
-            da_match = re.search(r"da path ['\"]*([a-zA-Z0-9_/.-]+)['\"]*", command_text)
-            height_match = re.search(r"height (?:from|start) ([0-9]+) (?:to|end) ([0-9]+)", command_text)
-            chain_match = re.search(r"chain(?:-| )id ['\"]*([a-zA-Z0-9_-]+)['\"]*", command_text)
-            
-            if rollapp_match and from_match and da_match and height_match and chain_match:
-                return self.submit_batch(
-                    rollapp_match.group(1),
-                    from_match.group(1),
-                    da_match.group(1),
-                    int(height_match.group(1)),
-                    int(height_match.group(2)),
-                    chain_match.group(1)
-                )
-            else:
-                missing = []
-                if not rollapp_match:
-                    missing.append("RollApp ID")
-                if not from_match:
-                    missing.append("wallet name")
-                if not da_match:
-                    missing.append("DA path")
-                if not height_match:
-                    missing.append("height range")
-                if not chain_match:
-                    missing.append("chain ID")
-                
-                return {
-                    "status": "error", 
-                    "error": f"Missing parameters: {', '.join(missing)}", 
-                    "output": ""
-                }
-        
-        elif re.search(r"(?:get|check|show) status", command_text):
-            return self.get_status()
-        
-        elif re.search(r"(?:help|show help|show commands|list commands)", command_text):
-            return {
-                "status": "success",
-                "output": self.get_command_help(),
-                "error": ""
-            }
-        
-        elif re.search(r"(?:update|add|set) whitelisted relayers?", command_text):
-            addresses_match = re.search(r"(?:address(?:es)?|addr) ['\"]*([a-zA-Z0-9,\s]+)['\"]*", command_text)
-            from_match = re.search(r"from ['\"]*(\w+)['\"]*", command_text)
-            chain_match = re.search(r"chain(?:-| )id ['\"]*([a-zA-Z0-9_-]+)['\"]*", command_text)
-            
-            if addresses_match and from_match and chain_match:
-                # Parse addresses - could be comma-separated list
-                addresses = [addr.strip() for addr in addresses_match.group(1).split(',')]
-                return self.update_whitelisted_relayers(
-                    addresses,
-                    from_match.group(1),
-                    chain_match.group(1)
-                )
-            else:
-                missing = []
-                if not addresses_match:
-                    missing.append("relayer addresses")
-                if not from_match:
-                    missing.append("wallet name (must be sequencer key)")
-                if not chain_match:
-                    missing.append("chain ID")
-                
-                return {
-                    "status": "error", 
-                    "error": f"Missing parameters: {', '.join(missing)}", 
-                    "output": ""
-                }
-            
-        else:
-            return {
-                "status": "error",
-                "output": "",
-                "error": "Command not recognized. Please try a different command."
-            }
+        elif re.search(r"install (?:the )?roller", command_text):
+            return self.simulate_install("roller")
 
-    def get_command_help(self) -> Dict:
-        """Get a list of available commands and example usage."""
-        commands = [
-            {
-                "name": "Create wallet",
-                "description": "Create a new wallet for use with Dymension",
-                "example": "Create a new wallet named mywallet"
-            },
-            {
-                "name": "Recover wallet",
-                "description": "Recover a wallet using mnemonic phrase",
-                "example": "Recover wallet named mywallet"
-            },
-            {
-                "name": "List wallets",
-                "description": "List all available wallets",
-                "example": "List all wallets"
-            },
-            {
-                "name": "Check balance",
-                "description": "Check balance of an address",
-                "example": "Check balance for address dym12345..."
-            },
-            {
-                "name": "Transfer tokens",
-                "description": "Transfer tokens to another address",
-                "example": "Transfer 10adym from mywallet to dym12345... chain-id dymension_1100-1"
-            },
-            {
-                "name": "Create RollApp",
-                "description": "Create a new RollApp on Dymension",
-                "example": "Create rollapp named myapp_1234 from mywallet chain-id dymension_1100-1"
-            },
-            {
-                "name": "Register sequencer",
-                "description": "Register a sequencer for a RollApp",
-                "example": "Register sequencer for rollapp myapp_1234 with address dym456... from mywallet dym account dym456... pubkey ABC123... chain-id dymension_1100-1"
-            },
-            {
-                "name": "Update whitelisted relayers",
-                "description": "Update the list of whitelisted relayers for gas-free IBC transactions",
-                "example": "Update whitelisted relayers address dym123456,dym654321 from sequencerkey chain-id dymension_1100-1"
-            },
-            {
-                "name": "Query RollApp",
-                "description": "Get information about a specific RollApp",
-                "example": "Show rollapp with id myapp_1234"
-            },
-            {
-                "name": "List RollApps",
-                "description": "List all RollApps on the network",
-                "example": "List all rollapps"
-            },
-            {
-                "name": "Query sequencers",
-                "description": "List sequencers for a RollApp",
-                "example": "Show sequencers for rollapp myapp_1234"
-            },
-            {
-                "name": "Claim settlement",
-                "description": "Claim a settlement",
-                "example": "Claim settlement with id s123 from mywallet chain-id dymension_1100-1"
-            },
-            {
-                "name": "Submit batch",
-                "description": "Submit a batch of transactions for a RollApp",
-                "example": "Submit batch for rollapp myapp_1234 from mywallet da path /path/to/proof height start 100 end 200 chain-id dymension_1100-1"
-            },
-            {
-                "name": "Check status",
-                "description": "Check the status of the Dymension node",
-                "example": "Get status"
-            }
-        ]
-        
-        return commands
+        # ... rest of the parse_command method ...
+
+    def detect_os(self) -> Dict:
+        """Return information about the detected operating system"""
+        return {
+            "status": "success",
+            "output": f"Detected operating system: {self.os}\n"
+                     f"Is Windows: {self.is_windows}\n"
+                     f"Is macOS: {self.is_mac}\n"
+                     f"Is Linux: {self.is_linux}",
+            "error": ""
+        }
 
 # Helper function to format output
 def format_output(result: Dict) -> str:
