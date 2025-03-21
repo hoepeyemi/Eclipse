@@ -30,8 +30,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY app/ /app/app/
-COPY main.py /app/
-COPY config.py /app/
+COPY backend/main.py /app/
+COPY backend/config.py /app/
 
 # Expose port
 EXPOSE 5000
