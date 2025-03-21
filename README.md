@@ -93,6 +93,4 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## Screenshots
 
-![Dymension RollApp CLI Interface](/path/to/screenshot.png)
