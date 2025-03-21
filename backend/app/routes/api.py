@@ -32,7 +32,7 @@ def dymension_command():
                 "output": "",
                 "error": "Request must be in JSON format"
             }), 400
-            
+
         data = request.get_json()
         
         if "command" not in data:
