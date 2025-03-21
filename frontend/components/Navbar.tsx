@@ -3,26 +3,16 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart3, Home, Info, LineChart, Menu, X, Code } from 'lucide-react';
+import { Home, Info, Code, Menu, X } from 'lucide-react';
 import { ThemeSelector } from './ThemeSelector';
 
-// In your Navbar component:
-<div className="flex items-center space-x-2">
-  <ThemeSelector />
-  {/* Your other navbar items */}
-</div>
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
 
-  console.log("Current pathname:", pathname); // Add this for debugging
-
   const isActive = (path: string) => {
-    const active = path === '/' ? pathname === '/' : pathname === path || pathname.startsWith(`${path}/`);
-    console.log(`Checking path: ${path}, result: ${active}`); // Add this for debugging
-    return active;
+    return path === '/' ? pathname === '/' : pathname === path || pathname.startsWith(`${path}/`);
   };
-
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
@@ -30,8 +20,6 @@ const Navbar = () => {
 
   const navItems = [
     { name: 'Home', path: '/', icon: <Home className="h-4 w-4" /> },
-    { name: 'Analysis', path: '/analyze', icon: <LineChart className="h-4 w-4" /> },
-    { name: 'Predictions', path: '/predict', icon: <BarChart3 className="h-4 w-4" /> },
     { name: 'Dymension', path: '/dymension', icon: <Code className="h-4 w-4" /> },
     { name: 'About', path: '/about', icon: <Info className="h-4 w-4" /> },
   ];
@@ -42,7 +30,7 @@ const Navbar = () => {
         <div className="flex justify-between h-16 items-center">
           <div className="flex items-center">
             <Link href="/" className="flex-shrink-0">
-              <h1 className="text-xl font-bold text-primary">Tradi</h1>
+              <h1 className="text-xl font-bold text-primary">Dymension CLI</h1>
             </Link>
           </div>
 

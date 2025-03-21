@@ -1,59 +1,76 @@
-from flask import Flask, jsonify, request
+from flask import Flask
 from flask_cors import CORS
-import datetime
+from app.routes.api import api_bp
 
-def create_app():
-    app = Flask(__name__)
-    CORS(app, resources={
-        r"/api/*": {
-            "origins": ["http://localhost:3000", "http://127.0.0.1:3000"],
-            "methods": ["GET", "POST", "OPTIONS"],
-            "allow_headers": ["Content-Type", "Authorization"]
-        }
-    })
+def create_app(test_config=None):
+    """Create and configure the Flask application instance"""
     
-    # Import and register blueprints
-    from app.routes.api import api_bp
+    # Initialize Flask app
+    app = Flask(__name__, instance_relative_config=True)
+    
+    # Apply CORS to the app
+    CORS(app)
+    
+    # Configure settings
+    app.config.from_mapping(
+        SECRET_KEY='dev',
+        DEBUG=True
+    )
+    
+    if test_config is not None:
+        app.config.from_mapping(test_config)
+    
+    # Register API blueprint
     app.register_blueprint(api_bp, url_prefix='/api')
     
-    # API-specific 404 handler - return JSON instead of HTML
-    @app.errorhandler(404)
-    def page_not_found(e):
-        return jsonify({
-            "error": "Not Found",
-            "message": "The requested endpoint does not exist"
-        }), 404
-    
-    # Generic error handler for all exceptions
-    @app.errorhandler(Exception)
-    def handle_exception(e):
-        # Log the error here (you might want to add logging)
-        return jsonify({
-            "error": "Internal Server Error",
-            "message": str(e)
-        }), 500
-    
+    # Define root route
     @app.route('/')
-    def index():
-        return jsonify({
-            "name": "Tradi API",
-            "version": "1.0.0",
-            "endpoints": [
-                "/api/chart-analysis",
-                "/api/chat",
-                "/api/ping",
-                "/api/stock-data",
-                "/api/dymension/command",
-                "/api/dymension/help"
-            ]
-        })
-    
-    @app.route('/api/ping')
-    def ping():
-        return jsonify({
-            "status": "ok",
-            "timestamp": datetime.datetime.now().isoformat(),
-            "version": "1.0.0"
-        })
+    def home():
+        # List of available endpoints for documentation
+        endpoints = [
+            {'path': '/api/ping', 'method': 'GET', 'description': 'Health check endpoint'},
+            {'path': '/api/dymension/command', 'method': 'POST', 'description': 'Execute Dymension CLI commands'},
+            {'path': '/api/dymension/help', 'method': 'GET', 'description': 'Get help for Dymension CLI commands'},
+        ]
+        
+        # Create HTML response
+        html = """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Tradi-App Backend API</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+                h1 { color: #333; }
+                ul { list-style-type: none; padding: 0; }
+                li { margin-bottom: 10px; padding: 10px; background-color: #f4f4f4; border-radius: 5px; }
+                .method { display: inline-block; width: 60px; font-weight: bold; }
+                .path { color: #0066cc; font-family: monospace; }
+            </style>
+        </head>
+        <body>
+            <h1>Tradi-App Backend API</h1>
+            <p>Welcome to the Tradi-App Backend API. The following endpoints are available:</p>
+            <ul>
+        """
+        
+        # Add each endpoint to the HTML
+        for endpoint in endpoints:
+            html += f"""
+                <li>
+                    <span class="method">{endpoint['method']}</span>
+                    <span class="path">{endpoint['path']}</span>
+                    <p>{endpoint['description']}</p>
+                </li>
+            """
+        
+        html += """
+            </ul>
+            <p>For more information, please refer to the documentation.</p>
+        </body>
+        </html>
+        """
+        
+        return html
     
     return app

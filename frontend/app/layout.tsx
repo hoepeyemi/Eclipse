@@ -7,8 +7,8 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Tradi - AI Trading Analysis",
-  description: "AI-powered trading analysis platform",
+  title: "Dymension RollApp CLI",
+  description: "Natural language interface for Dymension RollApp development",
 };
 
 export default function RootLayout({
