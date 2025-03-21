@@ -29,7 +29,7 @@ COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
-COPY app/ /app/app/
+COPY backend/app/ /app/app/
 COPY backend/main.py /app/
 COPY backend/config.py /app/
 
