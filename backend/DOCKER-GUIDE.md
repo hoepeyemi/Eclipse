@@ -62,13 +62,13 @@ You should see the container running in the list.
 The API is now accessible at:
 
 ```
-http://localhost:5000
+https://eclipse-511z.onrender.com
 ```
 
 You can test it with:
 
 ```bash
-curl http://localhost:5000/api/ping
+curl https://eclipse-511z.onrender.com/api/ping
 ```
 
 ## Managing the Container
@@ -169,4 +169,4 @@ This allows you to make changes to your code without rebuilding the image.
 For running both services, you can:
 
 1. Run the backend container as described above
-2. Run your frontend pointing to the backend API URL (http://localhost:5000/api) 
+2. Run your frontend pointing to the backend API URL (https://eclipse-511z.onrender.com/api) 

@@ -51,5 +51,5 @@ CMD ["python", "main.py"]
 #    docker run -p 5000:5000 dymension-cli-backend
 #
 # 4. Access the API at:
-#    http://localhost:5000
+#    https://eclipse-511z.onrender.com
 # ------------------------------------------------------------------------------ 

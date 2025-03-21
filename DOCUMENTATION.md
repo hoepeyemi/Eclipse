@@ -135,7 +135,7 @@ Before setting up the application, ensure you have the following installed:
    docker run -p 5000:5000 dymension-cli-backend
    ```
 
-The backend API will be accessible at `http://localhost:5000`.
+The backend API will be accessible at `https://eclipse-511z.onrender.com`.
 
 #### Local Development Setup
 

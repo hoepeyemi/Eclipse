@@ -119,7 +119,7 @@ Displays the output of executed commands with:
 
 ## Environment Variables
 
-- `NEXT_PUBLIC_API_URL`: URL of the backend API (default: 'http://localhost:5000/api')
+- `NEXT_PUBLIC_API_URL`: URL of the backend API (default: 'https://eclipse-511z.onrender.com/api')
 
 ## Contributing
 

@@ -132,7 +132,7 @@ pip install -r requirements.txt
 python app/main.py
 ```
 
-The server will be available at `http://localhost:5000`.
+The server will be available at `https://eclipse-511z.onrender.com`.
 
 ## Project Structure
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND_URL = 'http://localhost:5000';
+const BACKEND_URL = 'https://eclipse-511z.onrender.com';
 
 export async function POST(req: NextRequest) {
   try {
