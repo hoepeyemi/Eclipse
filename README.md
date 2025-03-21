@@ -1,88 +1,98 @@
 # Dymension RollApp CLI Platform
 
-This platform provides a natural language interface for creating and managing Dymension RollApps. The system allows developers to easily interact with the Dymension network through a simple conversational interface, handling complex CLI commands through an intuitive Next.js frontend and Flask backend.
+A modern web application providing a natural language interface for creating and managing Dymension RollApps.
+
+## Overview
+
+This platform simplifies the process of working with Dymension CLI tools by providing an intuitive user interface that accepts natural language commands. It's designed to help blockchain developers create, deploy, and manage Dymension RollApps with ease.
 
 ## Project Structure
 
 ```
-dymension-cli/
-├── frontend/                 # Next.js application
-│   ├── app/                  # Pages and routes (home, dymension, about)
-│   ├── components/           # UI components (DymensionInterface, UI components)
-│   └── public/               # Static assets and images
-├── backend/                  # Flask API server
-│   ├── app/                  # Core application
-│   │   ├── routes/           # API endpoints for Dymension CLI commands
-│   │   └── utils/            # Dymension CLI utilities
-│   └── Dockerfile            # Docker configuration for backend
-└── README.md                 # Project documentation     
+├── backend/                # Flask-based backend server
+│   ├── app/                # Application code
+│   │   ├── routes/         # API endpoints
+│   │   └── utils/          # Utility functions for CLI operations
+│   ├── Dockerfile          # Backend container definition
+│   └── requirements.txt    # Python dependencies
+├── frontend/               # Next.js frontend application
+│   ├── app/                # Next.js app directory
+│   ├── components/         # React components
+│   │   └── ui/             # UI component library
+│   ├── lib/                # Utility functions
+│   └── public/             # Static assets
+└── README.md               # Project documentation
 ```
 
 ## Features
 
-- Natural language command interface for Dymension CLI operations
-- Support for RollApp initialization and configuration 
-- Sequencer and relayer management capabilities
-- Full node deployment and monitoring tools
-- Wallet management for Dymension operations
+- **Dymension CLI Operations**: Execute Dymension CLI commands using natural language
+- **RollApp Management**: Create, configure, and deploy RollApps
+- **Sequencer Operations**: Manage sequencers for your RollApps
+- **Relayer Management**: Configure and monitor IBC relayers
+- **Wallet Management**: Create and manage wallets for Dymension operations
 
 ## Installation
 
-1. Clone this repository and navigate into it:
-
-```bash
-git clone https://github.com/yourusername/dymension-cli-platform
-cd dymension-cli-platform
-```
-
 ### Backend Setup
 
-2. Using Docker (recommended):
-
 ```bash
+# Navigate to the backend directory
 cd backend
+
+# Using Docker (recommended)
 docker-compose up -d
-```
 
-Or manually:
-
-```bash
-cd backend
+# Or for local development
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 python app/main.py
 ```
 
 ### Frontend Setup
 
-3. Install dependencies:
-
 ```bash
+# Navigate to the frontend directory
 cd frontend
+
+# Install dependencies
 npm install
-```
+# or
+yarn install
 
-4. Setup environment variables:
-- Create `.env.local` file
-- Add `NEXT_PUBLIC_API_URL=http://localhost:5000/api` to the file
-
-5. Run the Next.js app:
-
-```bash
+# Start development server
 npm run dev
+# or
+yarn dev
 ```
-
-Visit `http://localhost:3000` in your web browser to access the application.
 
 ## Usage
 
-1. Navigate to the Dymension CLI page
-2. Enter commands in natural language (e.g., "Create a new wallet named mywallet")
-3. View the command output and execution status
+1. Start both the backend and frontend servers
+2. Navigate to `http://localhost:3000` in your browser
+3. Click on "Open RollApp CLI" to access the CLI interface
+4. Enter commands in natural language, such as:
+   - "Create a new RollApp with ID myapp_12345-1"
+   - "Start the sequencer for my RollApp"
+   - "Setup IBC connection for my RollApp"
+
+## API Endpoints
+
+The backend provides the following main API endpoints:
+
+- `/api/ping`: Health check endpoint
+- `/api/dymension/command`: Execute Dymension CLI commands
+- `/api/dymension/help`: Get help information for Dymension CLI
 
 ## Contributing
 
-Contributions are welcome! Please open an issue or submit a pull request for any improvements or bug fixes.
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-This project is licensed under the MIT License. See the LICENSE file for more details.
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Screenshots
+
+![Dymension RollApp CLI Interface](/path/to/screenshot.png)
