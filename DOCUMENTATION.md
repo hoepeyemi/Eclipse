@@ -532,16 +532,3 @@ Commands in the Dymension CLI are organized into categories:
 8. **Explorer** - Block explorer deployment
 9. **Wallet** - Wallet management operations
 
-### Screenshots
-
-#### Home Page
-![Home Page](placeholder-for-homepage-screenshot.png)
-
-#### Dymension CLI Interface
-![CLI Interface](placeholder-for-cli-interface-screenshot.png)
-
-#### Command Execution
-![Command Execution](placeholder-for-command-execution-screenshot.png)
-
-#### Help Information
-![Help Information](placeholder-for-help-information-screenshot.png) 
