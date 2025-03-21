@@ -45,6 +45,24 @@ The application follows a client-server architecture with a clear separation bet
 
 - **Dymension CLI**: The underlying command-line interface for Dymension operations that the backend interacts with.
 
+### Command Processing Flow
+
+```
+┌───────────────┐     ┌───────────────┐     ┌───────────────┐     ┌───────────────┐
+│ User enters   │     │ Frontend sends│     │ Backend       │     │ Dymension CLI │
+│ natural       │────►│ command to    │────►│ processes and │────►│ executes the  │
+│ language      │     │ backend API   │     │ translates    │     │ command       │
+│ command       │     │               │     │ command       │     │               │
+└───────────────┘     └───────────────┘     └───────────────┘     └───────────────┘
+                                                                         │
+┌───────────────┐     ┌───────────────┐     ┌───────────────┐           │
+│ Frontend      │     │ Frontend      │     │ Backend       │           │
+│ displays      │◄────│ receives      │◄────│ formats and   │◄──────────┘
+│ result to     │     │ response from │     │ returns       │
+│ user          │     │ backend       │     │ result        │
+└───────────────┘     └───────────────┘     └───────────────┘
+```
+
 ## Features
 
 The Dymension RollApp CLI Platform offers the following key features:
@@ -91,11 +109,11 @@ The Dymension RollApp CLI Platform offers the following key features:
 ## Technology Stack
 
 ### Backend
-- **Language**: Python 3.9+
+- **Language**: Python 3.12
 - **Framework**: Flask
 - **API**: RESTful endpoints
 - **Containerization**: Docker
-- **Deployment**: Docker/Docker Compose
+- **Deployment**: Render.com
 
 ### Frontend
 - **Language**: TypeScript
@@ -111,13 +129,13 @@ The Dymension RollApp CLI Platform offers the following key features:
 Before setting up the application, ensure you have the following installed:
 
 - Node.js 18.0+ and npm/yarn
-- Python 3.9+ (for local development without Docker)
-- Docker (recommended for deployment)
+- Python 3.12+ (for local development without Docker)
+- Docker (optional, for containerized deployment)
 - Git
 
 ### Backend Setup
 
-#### Using Docker (Recommended)
+#### Using Docker (Optional)
 
 1. Clone the repository and navigate to the backend directory:
    ```bash
@@ -135,25 +153,51 @@ Before setting up the application, ensure you have the following installed:
    docker run -p 5000:5000 dymension-cli-backend
    ```
 
-The backend API will be accessible at `https://eclipse-511z.onrender.com`.
+The backend API will be accessible at `http://localhost:5000`.
 
 #### Local Development Setup
 
-1. Create and activate a virtual environment:
+1. Navigate to the backend directory:
+   ```bash
+   cd dymension-rollapp-cli/backend
+   ```
+
+2. Create and activate a virtual environment:
    ```bash
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
-2. Install dependencies:
+3. Install dependencies:
    ```bash
    pip install -r requirements.txt
    ```
 
-3. Run the application:
+4. Run the application:
    ```bash
-   python app/main.py
+   python main.py
    ```
+
+#### Deployment with Render.com
+
+The backend is currently deployed on Render.com and accessible at:
+
+```
+https://eclipse-511z.onrender.com
+```
+
+For deploying your own instance:
+
+1. Push your code to GitHub
+2. Connect the repository to Render.com
+3. Setup a Web Service with the following settings:
+   - Build command: `pip install -r backend/requirements.txt`
+   - Start command: `cd backend && python main.py`
+   - Environment variables:
+     - `PORT`: Set by Render
+     - `FLASK_ENV`: `production`
+     - `DEBUG`: `False`
+     - `SECRET_KEY`: Generate a secure key
 
 ### Frontend Setup
 
@@ -169,7 +213,12 @@ The backend API will be accessible at `https://eclipse-511z.onrender.com`.
    yarn install
    ```
 
-3. Start the development server:
+3. Set the backend URL in `.env.local`:
+   ```
+   NEXT_PUBLIC_API_URL=https://eclipse-511z.onrender.com/api
+   ```
+
+4. Start the development server:
    ```bash
    npm run dev
    # or
@@ -186,10 +235,16 @@ The frontend will be accessible at `http://localhost:3000`.
 backend/
 ├── app/                # Application code
 │   ├── __init__.py     # Application factory
+│   ├── main.py         # Application configuration  
 │   ├── routes/         # API endpoints
+│   │   ├── __init__.py # Routes initialization
 │   │   └── api.py      # API route definitions
+│   ├── models/         # Data models (minimal for this app)
+│   │   └── __init__.py # Models initialization
 │   └── utils/          # Utility functions
-│       └── dymension_cli.py  # Dymension CLI handler
+│       ├── __init__.py # Utils initialization
+│       ├── dymension_cli.py  # Dymension CLI handler
+│       └── json_utils.py     # JSON processing utilities
 ├── Dockerfile          # Docker configuration
 ├── docker-compose.yml  # Docker Compose configuration
 ├── requirements.txt    # Python dependencies
@@ -214,13 +269,14 @@ frontend/
 ├── components/           # Shared React components
 │   ├── ui/               # UI component library (shadcn/ui)
 │   ├── Navbar.tsx        # Navigation component
-│   ├── DymensionInterface.tsx # Main CLI interface component
 │   ├── LoadingSpinner.tsx # Loading indicator component
-│   └── ThemeProvider.tsx # Theme context provider
+│   ├── ThemeSelector.tsx  # Theme selection component
+│   └── ThemeProvider.tsx  # Theme context provider
 ├── lib/                  # Utility functions
 │   └── utils.ts          # Common utilities
 ├── hooks/                # Custom React hooks
-│   └── use-mobile.tsx    # Hook for responsive design
+│   ├── use-mobile.tsx    # Hook for responsive design
+│   └── use-toast.ts      # Toast notification hook
 ├── public/               # Static assets
 └── package.json          # Dependencies and scripts
 ```
@@ -271,10 +327,16 @@ The backend provides the following RESTful API endpoints:
     "status": "success",
     "commands": [
       {
-        "name": "Initialize RollApp",
-        "description": "Initialize a new RollApp with configuration files",
-        "example": "Initialize a new RollApp with ID myapp_12345-1",
-        "category": "Setup"
+        "name": "Create wallet",
+        "description": "Create a new wallet for Dymension operations",
+        "example": "Create a new wallet named mywallet",
+        "category": "Wallet"
+      },
+      {
+        "name": "Check balance",
+        "description": "Check the token balance of a wallet",
+        "example": "Check balance of my wallet mywallet",
+        "category": "Wallet"
       },
       // More commands...
     ]
@@ -302,39 +364,28 @@ The backend provides the following RESTful API endpoints:
 4. The command output will be displayed in the response section
 5. You can view command history and access previously executed commands
 
-### Interface Components
-
-The Dymension CLI interface consists of the following components:
-
-1. **Command Input**: A text input field at the bottom of the interface where you enter natural language commands
-2. **Command History**: A list of previously executed commands and their outputs
-3. **Command Output**: A formatted display of the results from executed commands
-4. **Help Button**: Access to information about available commands and their syntax
-
 ### Common Commands
-
-#### Environment Setup
-- "Install essential dependencies for running Dymension"
-- "Install Go version 1.23.0 on my system"
-- "Install the Roller CLI on my system"
-
-#### RollApp Creation and Management
-- "Initialize a new RollApp with ID myapp_12345-1"
-- "Create a new RollApp with ID myapp_12345-1 and chain-id dymension_1100-1"
-- "Register my RollApp myapp_12345-1 on the Dymension hub"
-- "Update endpoints for my RollApp myapp_12345-1"
-
-#### Sequencer Operations
-- "Setup sequencer for my RollApp with ID myapp_12345-1"
-- "Start the sequencer for my RollApp"
-- "Check status of my RollApp sequencer"
-- "Increase the bond amount for my sequencer by 10 DYM"
 
 #### Wallet Management
 - "Create a new wallet named mywallet"
 - "Recover wallet using my mnemonic phrase"
 - "Check balance of my wallet mywallet"
 - "Transfer 10 DYM from mywallet to targetwallet"
+
+#### RollApp Creation and Management
+- "Create a new RollApp with ID myapp_12345-1 and chain-id dymension_1100-1"
+- "Register my RollApp myapp_12345-1 on the Dymension hub"
+- "Query information about RollApp myapp_12345-1"
+- "List all registered RollApps"
+
+#### Sequencer Operations
+- "Register sequencer for RollApp myapp_12345-1"
+- "Query sequencers for RollApp myapp_12345-1"
+- "Submit a batch for RollApp myapp_12345-1"
+- "Claim settlement for settlement ID 12345"
+
+#### Relayer Management
+- "Update whitelisted relayers for my RollApp"
 
 ## Development Guide
 
@@ -343,7 +394,7 @@ The Dymension CLI interface consists of the following components:
 #### Backend
 1. Create new utility functions in `backend/app/utils/`
 2. Add new route handlers in `backend/app/routes/api.py`
-3. Update the command processing logic in the Dymension CLI handler
+3. Update the command processing logic in the `DymensionCLI` class
 4. Test the new endpoints with API testing tools like Postman or curl
 
 #### Frontend
@@ -362,52 +413,33 @@ The Dymension CLI interface consists of the following components:
 
 ### Backend Issues
 
-#### Docker Container Not Starting
-- Check if port 5000 is already in use by another application
-- Verify Docker is running properly on your system
-- Check the container logs for errors: `docker logs dymension-backend`
+#### Deployment Errors
+- Check the path structure in your Dockerfile or deployment configuration
+- Ensure your `main.py` file is at the correct location
+- Verify port configuration and environment variables
+- Check Render.com logs for specific error messages
 
 #### Command Execution Errors
 - Ensure the Dymension CLI is properly installed and accessible
-- Check file permissions for executing CLI commands
-- Verify environment variables are set correctly
+- Check that the `DymensionCLI` class can find the required binaries
+- Verify file permissions for executing CLI commands
+- Check for proper error handling in the command execution process
 
 ### Frontend Issues
 
-#### Development Server Not Starting
-- Check for Node.js version compatibility (18.0+)
-- Verify all dependencies are installed: `npm install` or `yarn install`
-- Check for TypeScript or ESLint errors
-
 #### API Connection Errors
 - Ensure the backend server is running and accessible
-- Check the API URL configuration in the frontend
-- Verify network connectivity between frontend and backend
+- Verify the `NEXT_PUBLIC_API_URL` in your environment variables points to the correct backend URL
+- Check network connectivity between frontend and backend
+- Examine browser network tab for specific API errors
 
 #### UI Rendering Issues
 - Clear browser cache and reload the page
 - Check browser console for JavaScript errors
 - Verify CSS is loading correctly
+- Test with different browsers to isolate browser-specific issues
 
 ## System Diagrams
-
-### Command Processing Flow
-
-```
-┌───────────────┐     ┌───────────────┐     ┌───────────────┐     ┌───────────────┐
-│ User enters   │     │ Frontend sends│     │ Backend       │     │ Dymension CLI │
-│ natural       │────►│ command to    │────►│ processes and │────►│ executes the  │
-│ language      │     │ backend API   │     │ translates    │     │ command       │
-│ command       │     │               │     │ command       │     │               │
-└───────────────┘     └───────────────┘     └───────────────┘     └───────────────┘
-                                                                         │
-┌───────────────┐     ┌───────────────┐     ┌───────────────┐           │
-│ Frontend      │     │ Frontend      │     │ Backend       │           │
-│ displays      │◄────│ receives      │◄────│ formats and   │◄──────────┘
-│ result to     │     │ response from │     │ returns       │
-│ user          │     │ backend       │     │ result        │
-└───────────────┘     └───────────────┘     └───────────────┘
-```
 
 ### Application Components
 
@@ -500,35 +532,17 @@ Continue?    End   │
 ## UI Reference
 
 ### Home Page
-
-The home page provides an overview of the Dymension RollApp CLI Platform and offers a direct link to the CLI interface.
-
-**Main Components:**
-- Header with the platform title and navigation
-- Card with information about the Dymension RollApp CLI
-- Button to access the CLI interface
+The home page provides an introduction to the Dymension RollApp CLI Platform and a button to access the CLI interface.
 
 ### Dymension CLI Interface
+The CLI interface includes:
+- A command input field
+- A results display area
+- Command history
+- Help and reference section
 
-The Dymension CLI interface is the main interaction point for users to issue commands and view results.
+### About Page
+Information about the platform, its features, and technology stack.
 
-**Main Components:**
-- Command input field
-- Command history display
-- Response output area
-- Help information
-
-### Command Categories
-
-Commands in the Dymension CLI are organized into categories:
-
-1. **Setup** - Environment and prerequisite installation
-2. **RollApp** - RollApp creation and management
-3. **Sequencer** - Sequencer operations and management
-4. **SequencerMgmt** - Advanced sequencer management
-5. **Relayer** - IBC relayer setup and management
-6. **eIBC** - Ethereum IBC client operations
-7. **Node** - Full node operations
-8. **Explorer** - Block explorer deployment
-9. **Wallet** - Wallet management operations
+*Note: Screenshots will be added in a future update.*
 
