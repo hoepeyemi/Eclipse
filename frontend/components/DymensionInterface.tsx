@@ -22,11 +22,11 @@ import LoadingSpinner from './LoadingSpinner';
 import { Badge } from './ui/badge';
 import CommandDocs from './ui/command-docs';
 
-interface Command {
+export interface Command {
   name: string;
   description: string;
   example: string;
-  category?: string;
+  category: string; // Required field
 }
 
 interface CommandResult {
@@ -52,8 +52,11 @@ const DymensionInterface: React.FC = () => {
       }
       const data = await response.json();
       if (data.status === 'success' && Array.isArray(data.commands)) {
-        // We don't need to manually categorize anymore as the backend now provides categories
-        setCommandSuggestions(data.commands);
+        const processedCommands = data.commands.map((cmd: Partial<Command>) => ({
+          ...cmd,
+          category: cmd.category || 'General',
+        })) as Command[];
+        setCommandSuggestions(processedCommands);
       }
     } catch (error) {
       console.error('Error fetching command suggestions:', error);
@@ -61,7 +64,6 @@ const DymensionInterface: React.FC = () => {
     }
   };
 
-  // Load command suggestions on component mount
   React.useEffect(() => {
     fetchCommandSuggestions();
   }, []);
@@ -90,14 +92,12 @@ const DymensionInterface: React.FC = () => {
       setCommandHistory(prev => [...prev, { cmd: command, result }]);
       setCommand('');
       
-      // Show success or error toast
       if (result.status === 'success') {
         toast.success('Command executed successfully');
       } else if (result.error) {
         toast.error(result.error);
       }
       
-      // Automatically switch to history tab
       setActiveTab('history');
     } catch (error) {
       console.error('Error executing command:', error);
@@ -244,4 +244,4 @@ const DymensionInterface: React.FC = () => {
   );
 };
 
-export default DymensionInterface; 
+export default DymensionInterface;
