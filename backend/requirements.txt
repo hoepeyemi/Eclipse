@@ -16,6 +16,9 @@ requests
 # Secret AI SDK requirements
 secret_ai_sdk
 
+# Dymension CLI requirements
+subprocess32
+
 # Other dependencies
 aiohttp>=3.8.0
 python-dotenv>=0.15.0
