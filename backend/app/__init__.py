@@ -38,7 +38,7 @@ def create_app(test_config=None):
         <!DOCTYPE html>
         <html>
         <head>
-            <title>Tradi-App Backend API</title>
+            <title>Dymension RollApp CLI Backend API</title>
             <style>
                 body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
                 h1 { color: #333; }
@@ -49,8 +49,8 @@ def create_app(test_config=None):
             </style>
         </head>
         <body>
-            <h1>Tradi-App Backend API</h1>
-            <p>Welcome to the Tradi-App Backend API. The following endpoints are available:</p>
+            <h1>Dymension RollApp CLI Backend API</h1>
+            <p>Welcome to the Dymension RollApp CLI Backend API. The following endpoints are available:</p>
             <ul>
         """
         

@@ -1,6 +1,6 @@
-# Tradi Backend
+# Dymension RollApp CLI Backend
 
-This is the backend service for the Tradi application, providing API endpoints for stock data analysis, predictions, and Dymension CLI operations.
+This is the backend service for the Dymension RollApp CLI Platform, providing API endpoints for executing Dymension CLI operations.
 
 ## Requirements
 
@@ -30,10 +30,10 @@ You can also build and run the Docker container directly:
 
 ```bash
 # Build the Docker image
-docker build -t tradi-backend .
+docker build -t dymension-cli-backend .
 
 # Run the container
-docker run -p 5000:5000 -d --name tradi-backend tradi-backend
+docker run -p 5000:5000 -d --name dymension-cli-backend dymension-cli-backend
 ```
 
 ## Environment Variables
@@ -50,9 +50,6 @@ You can configure the application using the following environment variables:
 The backend provides the following main API endpoints:
 
 - `/api/ping`: Health check endpoint
-- `/api/stock-data`: Get stock data for analysis
-- `/api/predict`: Generate price predictions using ML models
-- `/api/chart-analysis`: Analyze chart patterns
 - `/api/dymension/command`: Execute Dymension CLI commands
 - `/api/dymension/help`: Get help information for Dymension CLI
 

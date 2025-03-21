@@ -1,20 +1,11 @@
 flask
 flask-cors
-numpy
-pandas
-matplotlib
-scikit-learn
-yfinance
 python-dotenv
 werkzeug
-keras
 hypercorn
 quart
 pyyaml
 requests
-
-# Secret AI SDK requirements
-secret_ai_sdk
 
 # Dymension CLI requirements
 subprocess32
@@ -25,16 +16,7 @@ python-dotenv>=0.15.0
 asyncio>=3.4.3
 websockets>=10.0
 requests>=2.25.1
-pandas>=1.3.0
 typing_extensions>=4.0.0
-
-# Remove problematic dependencies that were for Injective
-# secp256k1==0.14.0  # This was causing the pkg-config error
-# bech32==1.2.0
-# betterproto==2.0.0b5
-# bip32utils==0.3.post4
-# ecdsa==0.16.1
-# mnemonic==0.19
 
 certifi>=2021.10.8
 charset-normalizer>=2.0.0

@@ -1,77 +1,83 @@
-# Tradi App
+# Dymension RollApp CLI Platform
 
-Tradi is an advanced confidential trading analysis dApp that leverages Secret Network's AI SDK to deliver secure, private market insights, technical analysis, and price predictions. The system features interactive charts, conversational AI, and predictive models to help traders make data-driven decisions through an intuitive Next.js frontend and powerful Flask backend with scikit-learn and TensorFlow integration.
+This platform provides a natural language interface for creating and managing Dymension RollApps. The system allows developers to easily interact with the Dymension network through a simple conversational interface, handling complex CLI commands through an intuitive Next.js frontend and Flask backend.
 
 ## Project Structure
 
 ```
-tradi/
+dymension-cli/
 ├── frontend/                 # Next.js application
-│   ├── app/                  # Pages and routes (home, analyze, predictions)
-│   ├── components/           # UI components (charts, forms, prediction displays)
+│   ├── app/                  # Pages and routes (home, dymension, about)
+│   ├── components/           # UI components (DymensionInterface, UI components)
 │   └── public/               # Static assets and images
 ├── backend/                  # Flask API server
 │   ├── app/                  # Core application
-│   │   ├── models/           # ML prediction models (sklearn, tensorflow. arima)
-│   │   └── routes/           # API endpoints for data and predictions
-│   └── utils/                # Trading strategies and data processing
+│   │   ├── routes/           # API endpoints for Dymension CLI commands
+│   │   └── utils/            # Dymension CLI utilities
+│   └── Dockerfile            # Docker configuration for backend
 └── README.md                 # Project documentation     
 ```
+
+## Features
+
+- Natural language command interface for Dymension CLI operations
+- Support for RollApp initialization and configuration 
+- Sequencer and relayer management capabilities
+- Full node deployment and monitoring tools
+- Wallet management for Dymension operations
 
 ## Installation
 
 1. Clone this repository and navigate into it:
 
 ```bash
-git clone https://github.com/emiridbest/tradi-app
-cd tradi-app
+git clone https://github.com/yourusername/dymension-cli-platform
+cd dymension-cli-platform
 ```
-# Backend Setup
-2. Install the required packages:
+
+### Backend Setup
+
+2. Using Docker (recommended):
 
 ```bash
-pip install -r requirements.txt  
+cd backend
+docker-compose up -d
 ```
 
-3. Setup environment variables
+Or manually:
 
 ```bash
-
-# Create .env file and add these variables
-SECRET_AI_API_KEY="your_secret_api_key_here"
+cd backend
+pip install -r requirements.txt
+python app/main.py
 ```
 
-4. Running the agent
+### Frontend Setup
 
-```bash
-python main.py 
-```
-
-
-# Frontend setup
-5. Open new terminal in the root directory of the project and install dependencies
+3. Install dependencies:
 
 ```bash
 cd frontend
 npm install
 ```
 
-6. Setup environment variables
--  Create .env file
-- Add NEXT_PUBLIC_BACKEND_URL=http://127.0.0.1:5000/api to .env file
+4. Setup environment variables:
+- Create `.env.local` file
+- Add `NEXT_PUBLIC_API_URL=http://localhost:5000/api` to the file
 
-7. Run react app
+5. Run the Next.js app:
 
 ```bash
 npm run dev
-
 ```
 
-Visit `http://localhost:5000` in your web browser to access the application.
+Visit `http://localhost:3000` in your web browser to access the application.
 
-## Next Steps:
-- Incorprate and test live trading startegies
-- Test automated tarding
+## Usage
+
+1. Navigate to the Dymension CLI page
+2. Enter commands in natural language (e.g., "Create a new wallet named mywallet")
+3. View the command output and execution status
 
 ## Contributing
 
@@ -80,15 +86,3 @@ Contributions are welcome! Please open an issue or submit a pull request for any
 ## License
 
 This project is licensed under the MIT License. See the LICENSE file for more details.
-# Screenshots
-
-
-![chat_analysis](https://github.com/emiridbest/tradi/blob/main/assets/chat_analysis.png) 
-
-![dashboard](https://github.com/emiridbest/tradi/blob/main/assets/dashboard.png)
-
-![loading](https://github.com/emiridbest/tradi/blob/main/assets/loading.png)
-
-![price_prediction](https://github.com/emiridbest/tradi/blob/main/assets/price_prediction.png) 
-
-![real_time](https://github.com/emiridbest/tradi/blob/main/assets/real_time.png)
